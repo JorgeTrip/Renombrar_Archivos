@@ -1,0 +1,11 @@
+.qodo
+
+# Archivos de build
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

@@ -1,0 +1,63 @@
+INSTRUCCIONES DETALLADAS DE USO
+=============================
+
+1. PREPARACIÓN
+-------------
+- Asegúrate de tener Python 3.6 o superior instalado
+- Instala el programa usando uno de estos métodos:
+  a) Instalación desde código fuente:
+     pip install -e .
+  b) Instalación directa:
+     - Descarga el archivo renombrar.exe
+     - Colócalo en la carpeta donde están los archivos a renombrar
+
+2. USO BÁSICO
+------------
+- Abre una terminal en la carpeta donde están los archivos
+- Ejecuta el comando: renombrar
+- Selecciona la opción deseada del menú
+- Sigue las instrucciones en pantalla
+
+3. TIPOS DE ARCHIVOS SOPORTADOS
+------------------------------
+Imágenes:
+- .jpg
+- .jpeg
+- .png
+- .heic
+
+Videos:
+- .mkv
+- .mp4
+
+4. FORMATOS DE NOMBRE DETECTADOS
+-------------------------------
+- Formato de teléfono: XXXXXXXX_XXXXXX (ej: 20250312_073436.jpg)
+- Formato IMG: IMG_XXXXXXXX_XXXXXX
+- Formato VID: VID_XXXXXXXX_XXXXXX
+- Otros formatos que contengan fechas y horas
+
+5. MANEJO DE DUPLICADOS
+----------------------
+Si se encuentra un archivo con el mismo nombre:
+- Opción A: Agrega una letra al final (a, b, c, ...)
+- Opción B: Omitir el archivo
+
+6. SOLUCIÓN DE PROBLEMAS
+------------------------
+- Si el programa no detecta archivos:
+  * Verifica que estés en la carpeta correcta
+  * Asegúrate de que los archivos tengan las extensiones correctas
+  * Verifica que los archivos no estén ya renombrados
+
+- Si hay errores al renombrar:
+  * Verifica que tengas permisos de escritura
+  * Asegúrate de que los archivos no estén en uso
+  * Verifica que haya espacio suficiente en el disco
+
+7. CONTACTO Y SOPORTE
+--------------------
+Para reportar problemas o sugerir mejoras:
+- Abre un issue en el repositorio de GitHub
+- Describe el problema detalladamente
+- Incluye ejemplos de los archivos que causan el problema 

@@ -1,0 +1,27 @@
+OK. Quiero utilizar Python. El propósito del programa es encontrar una fecha dentro del nombre original y trasladarlo al nombre de destino con el formato que detallaré a continuación. No debe utilizar la fecha y hora actual. Quiero que el código (identificadores, por ejemplo) esté en español. ¿Cómo debería ser el código, para que el programa haga lo siguiente?:
+1) Los archivos que debe buscar para renombrar siempre deben ser de extensión ".jpg" o ".jpeg"
+2) Los archivos pueden estar en la misma carpeta que el programa o en otras carpetas dentro de su ubicación.
+3) El formato destino debe ser siempre números que representen una fecha y una hora "AAAA-MM-DD HH-MM-SS".  Solamente en los casos donde no haya números que representen horas en el nombre original, al renombrar quedará la fecha y una secuencia numérica de 4 digitos como "AAAA-MM-DD XXXX" que se restablece en 0 al iniciar el programa e irá aumentando a medida que aparezcan archivos que requieran este recurso para renombrarlos.  Las referencias son: "AAAA-MM-DD" representa año de 4 digitos, mes de 2 digitos y día de 2 digitos, "HH-MM-SS" representa hora de 2 dígitos, minutos de 2 digitos y segundos de 2 digitos, "XXXX" representa una secuencia numérica, y "AN" representa una secuencia alfanumérica de cualquier cantidad de dígitos.
+4) Los posibles formatos de nombre de origen, pueden ser: "AAAAMMDD_HHMMSS", "IMG_AAAAMMDD_HHMMSS", "VID-AAAAMMDD-WAXXXX", "Imagen de WhatsApp AAAA-MM-DD a las HH.MM.SS_AN" u otros.  Más allá de los nombres en sí, lo importante es establecer un algoritmo que busque identificar la fecha y la hora indistintamente los caracteres que haya en el medio (si hay) para luego introducirlas en el nombre de destino con el formato establecido en el punto 3.
+5) Si los archivos que encuentra ya tienen el formato de destino indicado en el punto 3, deben ser pasados por alto.
+6) Al comenzar a buscar archivos, debe mostrar en pantalla:
+	"Iniciando búsqueda de archivos a renombrar..."
+
+7) Si ya existe un archivo con el nombre que se pretende dar, ofrecer un menú de opciones:
+	"Archivo: "[nombre original del archivo]"
+	Ya existe un archivo con el nombre de destino.
+	¿Qué desea hacer?:
+
+	a. Sobreescribir el archivo anterior
+	b. Renombrar agregando una "a" al final del nombre
+	c. No hacer nada"
+y que el usuario elija una opción a, b o c.
+8) Si todos los archivos que encuentre no tienen el formato original buscado, o ya tienen el formato de destino, dar un mensaje por pantalla:
+	"No hay archivos por renombrar."
+9) Al terminar de renombrar archivos, dar un mensaje:
+	"Proceso de cambio de nombre finalizado con éxito.
+	Se realizaron [número de cambios] cambios:"
+Y mostrar por pantalla una lista de los nombres originales encontrados, luego un "-->" y luego el nombre de destino dado.
+10) Luego del caso 8) o 9), dar un mensaje antes de finalizar el programa:
+	"Presione cualquier tecla para salir..."
+Y esperar a que el usuario presione cualquier tecla para salir del programa.

@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: renombrar
+Version: 1.0.0
+Summary: Herramienta para renombrar archivos de fotos y videos
+Author: JOT
+Requires-Python: >=3.6
+Requires-Dist: python-dateutil>=2.8.2
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
