@@ -4,17 +4,14 @@ Una herramienta en Python para renombrar automáticamente archivos de fotos y vi
 
 ## Características
 
-- Renombra archivos de fotos y videos con formato: `YYYYMMDD_HHMMSS`
-- Soporta múltiples formatos de archivo:
-  - Imágenes: .jpg, .jpeg, .png
-  - Videos: .mkv, .mp4
-  - Otros: .heic
-- Manejo inteligente de archivos duplicados
-- Interfaz de línea de comandos intuitiva
-- Múltiples formas de ejecución:
-  - Como comando global (`renombrar`)
-  - Como ejecutable independiente (.exe)
-  - Desde el menú contextual de Windows
+- **Búsqueda Recursiva**: Analiza el directorio actual y todos sus subdirectorios en busca de archivos.
+- **Selección de Directorios**: Permite al usuario elegir en qué carpetas específicas desea realizar el renombrado.
+- **Renombrado Inteligente**: Asigna nombres con el formato `YYYYMMDD_HHMMSS` basados en metadatos o el nombre original del archivo.
+- **Categorización Clara**: Agrupa los archivos en categorías (Imágenes, Videos, Formato Teléfono) para un control granular.
+- **Sugerencias de Renombrado**: Identifica archivos que coinciden con un patrón de nombre (ej. `Canon_20230101_123000.cr2`) pero tienen extensiones no estándar y los sugiere para renombrar.
+- **Soporte Amplio de Formatos**: Configurado para extensiones comunes de imagen y video (`.jpg`, `.jpeg`, `.png`, `.mkv`, `.mp4`, `.heic`).
+- **Prevención de Errores**: La ventana de la consola permanece abierta si ocurre un error, mostrando el traceback para facilitar la depuración.
+- **Múltiples Vías de Ejecución**: Puede usarse como un comando global, un `.exe` portable o desde el menú contextual de Windows.
 
 ## Requisitos
 
@@ -69,16 +66,17 @@ renombrar
 
 ## Uso del Programa
 
-1. Ejecuta el programa de cualquiera de las formas mencionadas arriba
-2. El programa buscará automáticamente archivos de fotos y videos en el directorio actual
-3. Se mostrará un resumen de los archivos encontrados
-4. Selecciona la opción deseada:
-   - 1: Renombrar todos los archivos
-   - 2: Renombrar solo imágenes
-   - 3: Renombrar solo videos
-   - 4: Renombrar imágenes y videos
-   - 5: Renombrar archivos de teléfono
-   - 6: Cancelar
+1.  **Ejecución**: Inicia el programa desde la carpeta que deseas organizar.
+2.  **Búsqueda**: La aplicación escaneará recursivamente el directorio y subdirectorios en busca de archivos.
+3.  **Selección de Directorio**: Si se encuentran archivos en múltiples carpetas, se mostrará una lista para que selecciones en cuáles quieres trabajar.
+4.  **Resumen de Cambios**: Se presentará un resumen de los archivos a renombrar, mostrando `nombre_original -> nombre_nuevo`, agrupados por categorías:
+    - Archivos de imagen (`IMG_...`)
+    - Archivos de video (`VID_...`)
+    - Archivos con formato teléfono (`YYYYMMDD_HHMMSS...`)
+    - Otros archivos con extensiones válidas.
+    - **Sugerencias**: Archivos con un patrón de nombre válido pero extensión no reconocida (ej. `.cr2`, `.dng`).
+5.  **Confirmación**: Podrás elegir qué categorías de archivos deseas renombrar. Puedes seleccionar una, varias o todas.
+6.  **Renombrado**: La aplicación procederá a renombrar los archivos de las categorías seleccionadas, evitando colisiones de nombres.
 
 ## Estructura del Proyecto
 
