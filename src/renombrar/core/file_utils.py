@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from .date_utils import obtener_fecha_hora, tiene_formato_telefono
 
 def obtener_nombre_destino(nombre_archivo, secuencia):
@@ -32,26 +33,15 @@ def renombrar_archivo(ruta_original, ruta_destino):
         print(f"Error al renombrar archivo: {e}")
         return False
 
-def buscar_archivos(directorio, extensiones_permitidas):
-    """Busca archivos en el directorio y sus subdirectorios."""
-    archivos_img = []
-    archivos_vid = []
-    otros_archivos = []
-    archivos_telefono = []
-    
-    for directorio_raiz, _, archivos in os.walk(directorio):
+def encontrar_archivos_por_directorio(directorio_base):
+    """
+    Busca todos los archivos en el directorio base y subdirectorios,
+    y los agrupa por su directorio relativo.
+    """
+    archivos_encontrados = defaultdict(list)
+    for directorio_actual, _, archivos in os.walk(directorio_base):
         for nombre_archivo in archivos:
-            if nombre_archivo.lower().endswith(extensiones_permitidas):
-                archivo_info = (directorio_raiz, nombre_archivo)
-                nombre_upper = nombre_archivo.upper()
+            dir_relativo = os.path.relpath(directorio_actual, directorio_base)
+            archivos_encontrados[dir_relativo].append(nombre_archivo)
                 
-                if tiene_formato_telefono(nombre_archivo):
-                    archivos_telefono.append(archivo_info)
-                elif nombre_upper.startswith("IMG"):
-                    archivos_img.append(archivo_info)
-                elif nombre_upper.startswith("VID"):
-                    archivos_vid.append(archivo_info)
-                else:
-                    otros_archivos.append(archivo_info)
-    
-    return archivos_img, archivos_vid, otros_archivos, archivos_telefono 
+    return dict(archivos_encontrados)

@@ -13,7 +13,7 @@ from .file_utils import (
     obtener_nombre_destino,
     obtener_nombre_destino_letra,
     renombrar_archivo,
-    buscar_archivos
+    encontrar_archivos_por_directorio
 )
 
 __all__ = [
@@ -25,5 +25,5 @@ __all__ = [
     "obtener_nombre_destino",
     "obtener_nombre_destino_letra",
     "renombrar_archivo",
-    "buscar_archivos"
+    "encontrar_archivos_por_directorio"
 ] 
