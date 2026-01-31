@@ -1,4 +1,4 @@
-# Renombrar Archivos de Fotos y Videos
+# Renombrar Archivos de Fotos y Videos - v1.8
 
 Una herramienta profesional en Python para renombrar automáticamente archivos de fotos y videos, agregando la fecha y hora extraída del nombre del archivo al inicio del nombre, optimizando la organización cronológica de tu biblioteca multimedia.
 
