@@ -6,43 +6,58 @@ def crear_ejecutable():
     """Crea un ejecutable .exe del programa usando PyInstaller."""
     try:
         # Instalar PyInstaller si no está instalado
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+        print("Verificando PyInstaller...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"], 
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
-        # Obtener la ruta del script principal y la raíz del proyecto
-        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'renombrar', 'main.py')
+        # Obtener rutas del proyecto
         project_root = os.path.dirname(os.path.dirname(__file__))
-        
-        # Crear directorios de build si no existen
-        build_dir = os.path.join(project_root, 'build')
+        scripts_dir = os.path.join(project_root, 'scripts')
+        spec_file = os.path.join(scripts_dir, 'RenombrarFotos.spec')
         dist_dir = os.path.join(project_root, 'dist')
-        os.makedirs(build_dir, exist_ok=True)
-        os.makedirs(dist_dir, exist_ok=True)
         
-        # Crear el ejecutable sin ícono
+        # Verificar que el spec file existe
+        if not os.path.exists(spec_file):
+            print(f"ERROR: No se encuentra el archivo {spec_file}")
+            print("El archivo de configuración .spec es necesario para la compilación.")
+            input("\nPresione Enter para salir...")
+            return
+        
+        print(f"\nUsando configuración: {spec_file}")
+        print("Compilando...")
+        print("=" * 60)
+        
+        # Compilar usando el spec file pre-configurado
+        # --clean asegura una compilación limpia
         subprocess.check_call([
             sys.executable, 
             "-m", 
             "PyInstaller",
-            "--onefile",
-            "--name=RenombrarFotos",
-            f"--distpath={dist_dir}",
-            f"--workpath={build_dir}",
-            f"--specpath={build_dir}",
-            script_path
+            spec_file,
+            "--clean"
         ])
         
-        print("\nEjecutable creado exitosamente!")
-        print(f"Puedes encontrar el archivo RenombrarFotos.exe en la carpeta {dist_dir}")
+        exe_path = os.path.join(dist_dir, 'RenombrarFotos.exe')
         
-        # Limpiar archivos temporales
-        spec_file = os.path.join(build_dir, 'RenombrarFotos.spec')
-        if os.path.exists(spec_file):
-            os.remove(spec_file)
+        print("\n" + "=" * 60)
+        print("✓ Ejecutable creado exitosamente!")
+        print(f"✓ Ubicación: {exe_path}")
+        print("=" * 60)
         
+        if os.path.exists(exe_path):
+            size_mb = os.path.getsize(exe_path) / (1024 * 1024)
+            print(f"✓ Tamaño: {size_mb:.2f} MB")
+        
+    except subprocess.CalledProcessError as e:
+        print(f"\n✗ Error durante la compilación.")
+        print(f"Código de salida: {e.returncode}")
     except Exception as e:
-        print(f"Error al crear el ejecutable: {e}")
+        print(f"\n✗ Error al crear el ejecutable: {e}")
+        import traceback
+        traceback.print_exc()
     
     input("\nPresione Enter para salir...")
 
 if __name__ == "__main__":
-    crear_ejecutable() 
+    crear_ejecutable()
+ 

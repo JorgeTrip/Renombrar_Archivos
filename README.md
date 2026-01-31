@@ -1,22 +1,79 @@
 # Renombrar Archivos de Fotos y Videos
 
-Una herramienta en Python para renombrar automáticamente archivos de fotos y videos basándose en su fecha de creación o modificación.
+Una herramienta profesional en Python para renombrar automáticamente archivos de fotos y videos, agregando la fecha y hora extraída del nombre del archivo al inicio del nombre, optimizando la organización cronológica de tu biblioteca multimedia.
 
-## Características
+## Características Principales
 
-- **Búsqueda Recursiva**: Analiza el directorio actual y todos sus subdirectorios en busca de archivos.
-- **Selección de Directorios**: Permite al usuario elegir en qué carpetas específicas desea realizar el renombrado.
-- **Renombrado Inteligente**: Asigna nombres con el formato `YYYYMMDD_HHMMSS` basados en metadatos o el nombre original del archivo.
-- **Categorización Clara**: Agrupa los archivos en categorías (Imágenes, Videos, Formato Teléfono) para un control granular.
-- **Sugerencias de Renombrado**: Identifica archivos que coinciden con un patrón de nombre (ej. `Canon_20230101_123000.cr2`) pero tienen extensiones no estándar y los sugiere para renombrar.
-- **Soporte Amplio de Formatos**: Configurado para extensiones comunes de imagen y video (`.jpg`, `.jpeg`, `.png`, `.mkv`, `.mp4`, `.heic`).
-- **Prevención de Errores**: La ventana de la consola permanece abierta si ocurre un error, mostrando el traceback para facilitar la depuración.
-- **Múltiples Vías de Ejecución**: Puede usarse como un comando global, un `.exe` portable o desde el menú contextual de Windows.
+### 🖥️ Interfaz de Usuario Mejorada
+- **Pantalla de Bienvenida Interactiva**: Muestra ejemplos de transformaciones antes de iniciar
+- **Título Centrado**: Presentación profesional con título adaptado al ancho de la terminal
+- **Copyright Integrado**: Información de autoría visible en el título y al salir del programa
+- **Confirmación del Usuario**: Pide consentimiento antes de procesar archivos
+- **Limpieza de Pantalla**: Interfaz limpia y organizada durante toda la ejecución
+
+### 📁 Gestión Inteligente de Archivos
+- **Búsqueda Recursiva**: Analiza el directorio actual y todos sus subdirectorios
+- **Selección Flexible de Directorios**: Elige qué carpetas específicas procesar
+- **Múltiples Opciones de Procesamiento**: Selecciona por categorías o procesa todo
+- **Prevención de Colisiones**: Maneja archivos duplicados agregando letras secuenciales
+
+### 🔄 Transformaciones de Nombres
+
+El programa reconoce varios patrones y los transforma al formato estándar:
+
+#### Archivos de Imagen (IMG)
+```
+IMG_20230315_143022.jpg
+→ 2023-03-15 14-30-22 - IMG_20230315_143022.jpg
+```
+
+#### Archivos de Teléfono (Formato YYYYMMDD_HHMMSS)
+```
+20231225_090000.mp4
+→ 2023-12-25 09-00-00 - 20231225_090000.mp4
+```
+
+#### Archivos de Video (VID)
+```
+VID_20240101_120000.mkv
+→ 2024-01-01 12-00-00 - VID_20240101_120000.mkv
+```
+
+#### Otros Patrones Reconocidos
+```
+Canon_20230101_123000.cr2
+→ 2023-01-01 12-30-00 - Canon_20230101_123000.cr2
+
+Photo2024-03-15.png
+→ 2024-03-15 - Photo2024-03-15.png
+```
+
+### 📊 Categorización Automática
+
+Los archivos se agrupan en categorías para control granular:
+
+1. **Archivos IMG**: Imágenes que comienzan con `IMG_`
+2. **Archivos VID**: Videos que comienzan con `VID_`
+3. **Archivos de Teléfono**: Formato `YYYYMMDD_HHMMSS`
+4. **Otros Archivos**: Con extensiones válidas pero otros patrones
+5. **Archivos Sugeridos**: Con patrones reconocibles pero extensiones no estándar
+
+### 🎯 Formatos Soportados
+
+**Imágenes**: `.jpg`, `.jpeg`, `.png`, `.heic`  
+**Videos**: `.mkv`, `.mp4`
+
+### 🛡️ Seguridad y Prevención de Errores
+
+- Manejo de duplicados con opciones interactivas
+- Traceback detallado si ocurren errores
+- Ventana de consola siempre visible para depuración
+- Confirmación antes de procesar archivos
 
 ## Requisitos
 
 - Python 3.6 o superior
-- Windows 10/11
+- Windows 10/11 (adaptable a otros sistemas)
 
 ## Instalación
 
@@ -33,50 +90,83 @@ cd Renombrar_Archivos
 pip install -r requirements.txt
 ```
 
-### 3. Instalar el paquete
+### 3. Instalar PyInstaller (para compilar)
+
+```bash
+pip install pyinstaller
+```
+
+## Formas de Uso
+
+### 1. Como Script de Python
+
+Ejecuta directamente desde el directorio del proyecto:
+
+```bash
+python renombrarfotos.py
+```
+
+### 2. Como Ejecutable Independiente
+
+Compila el programa a un archivo `.exe` utilizando el script automatizado (recomendado):
+
+```bash
+python scripts/crear_ejecutable.py
+```
+
+O usando PyInstaller directamente con el archivo spec:
+
+```bash
+python -m PyInstaller scripts/RenombrarFotos.spec --clean
+```
+
+El ejecutable se creará en `dist/RenombrarFotos.exe` y es completamente independiente.
+
+### 3. Como Paquete Instalado (Modo Desarrollo)
 
 ```bash
 pip install -e .
 ```
 
-## Formas de Uso
+Luego usa el comando `renombrar` desde cualquier directorio.
 
-### 1. Como comando global
+## Flujo de Trabajo del Programa
 
-Después de instalar el paquete, puedes usar el comando `renombrar` desde cualquier directorio:
+1. **Pantalla de Bienvenida**
+   - Muestra título centrado
+   - Presenta ejemplos de transformaciones
+   - Solicita confirmación del usuario
 
-```bash
-renombrar
-```
+2. **Búsqueda de Archivos**
+   - Escanea recursivamente el directorio actual
+   - Identifica archivos con patrones reconocibles
+   - Agrupa por directorio
 
-### 2. Como ejecutable independiente
+3. **Selección de Directorios**
+   - Lista todos los directorios con archivos encontrados
+   - Permite seleccionar uno, varios o todos
 
-1. Navega a la carpeta `scripts/`
-2. Ejecuta `compilar.bat`
-3. Selecciona la opción 2 para crear el ejecutable
-4. El archivo `RenombrarFotos.exe` se creará en la carpeta `dist/`
-5. Puedes copiar este .exe a cualquier lugar y ejecutarlo con doble clic
+4. **Clasificación y Resumen**
+   - Clasifica archivos por categoría
+   - Muestra resumen con transformaciones propuestas
+   - Formato: `nombre_original → nombre_nuevo`
 
-### 3. Desde el menú contextual de Windows
+5. **Menú de Opciones**
+   - Todos los archivos
+   - Solo archivos IMG
+   - Solo archivos VID
+   - Solo archivos de teléfono
+   - Combinaciones específicas
+   - Salir sin cambios
 
-1. Navega a la carpeta `scripts/`
-2. Ejecuta `compilar.bat` como administrador
-3. Selecciona la opción 1 para registrar en el menú contextual
-4. Ahora podrás hacer clic derecho en cualquier carpeta y verás la opción "Renombrar archivos de fotos"
+6. **Procesamiento**
+   - Renombra los archivos seleccionados
+   - Maneja duplicados interactivamente
+   - Muestra resumen de cambios realizados
 
-## Uso del Programa
-
-1.  **Ejecución**: Inicia el programa desde la carpeta que deseas organizar.
-2.  **Búsqueda**: La aplicación escaneará recursivamente el directorio y subdirectorios en busca de archivos.
-3.  **Selección de Directorio**: Si se encuentran archivos en múltiples carpetas, se mostrará una lista para que selecciones en cuáles quieres trabajar.
-4.  **Resumen de Cambios**: Se presentará un resumen de los archivos a renombrar, mostrando `nombre_original -> nombre_nuevo`, agrupados por categorías:
-    - Archivos de imagen (`IMG_...`)
-    - Archivos de video (`VID_...`)
-    - Archivos con formato teléfono (`YYYYMMDD_HHMMSS...`)
-    - Otros archivos con extensiones válidas.
-    - **Sugerencias**: Archivos con un patrón de nombre válido pero extensión no reconocida (ej. `.cr2`, `.dng`).
-5.  **Confirmación**: Podrás elegir qué categorías de archivos deseas renombrar. Puedes seleccionar una, varias o todas.
-6.  **Renombrado**: La aplicación procederá a renombrar los archivos de las categorías seleccionadas, evitando colisiones de nombres.
+7. **Continuar o Salir**
+   - Opción de procesar más archivos
+   - Salida limpia del programa
 
 ## Estructura del Proyecto
 
@@ -85,51 +175,46 @@ Renombrar_Archivos/
 ├── src/
 │   └── renombrar/
 │       ├── core/
-│       │   ├── file_utils.py
-│       │   └── date_utils.py
+│       │   ├── file_utils.py    # Utilidades de archivos y búsqueda
+│       │   └── date_utils.py    # Extracción de fecha/hora
 │       ├── ui/
-│       │   └── menu.py
-│       └── main.py
-├── scripts/
-│   ├── compilar.bat
-│   ├── crear_ejecutable.py
-│   └── registrar_menu_contextual.py
-├── build/
-├── dist/
-├── docs/
-├── requirements.txt
-└── setup.py
+│       │   └── menu.py          # Interfaz de usuario
+│       └── main.py              # Lógica principal
+├── dist/                        # Ejecutables compilados
+├── build/                       # Archivos temporales de compilación
+├── renombrarfotos.py           # Punto de entrada
+├── renombrarfotos.spec         # Configuración de PyInstaller
+├── requirements.txt            # Dependencias
+├── setup.py                    # Configuración del paquete
+└── README.md
 ```
 
-## Desarrollo
-
-### Compilación
-
-El proyecto incluye un script `compilar.bat` que facilita las tareas de desarrollo:
-
-1. Registrar en menú contextual (requiere admin)
-2. Crear ejecutable .exe
-3. Instalar paquete en modo desarrollo
+## Desarrollo y Compilación
 
 ### Modo Desarrollo
 
-Para trabajar en el código:
+```bash
+pip install -e .
+```
 
-1. Instala el paquete en modo desarrollo:
-   ```bash
-   pip install -e .
-   ```
-2. Realiza cambios en el código
-3. Los cambios se reflejan inmediatamente sin necesidad de reinstalar
+Los cambios se reflejan inmediatamente sin necesidad de reinstalar.
+
+### Compilar Ejecutable
+
+```bash
+python -m PyInstaller renombrarfotos.spec
+```
+
+> **Nota**: Si el comando `pyinstaller` no se encuentra en el PATH, usa `python -m PyInstaller` en su lugar.
 
 ## Contribuir
 
 Las contribuciones son bienvenidas. Por favor:
 
 1. Haz fork del repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
+2. Crea una rama para tu feature (`git checkout -b feature/NuevaCaracteristica`)
+3. Commit tus cambios (`git commit -m 'Añadir nueva característica'`)
+4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
 5. Abre un Pull Request
 
 ## Licencia
@@ -138,9 +223,10 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## Autor
 
-Jorge Trip - [@JorgeTrip](https://github.com/JorgeTrip)
+Jorge Osvaldo Tripodi (JOT) - [@JorgeTrip](https://github.com/JorgeTrip)
+Copyright © 2025
 
 ## Agradecimientos
 
 - A todos los contribuidores que han ayudado a mejorar este proyecto
-- A la comunidad de Python por las excelentes herramientas disponibles 
+- A la comunidad de Python por las excelentes herramientas disponibles

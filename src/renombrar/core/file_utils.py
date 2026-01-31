@@ -35,13 +35,17 @@ def renombrar_archivo(ruta_original, ruta_destino):
 
 def encontrar_archivos_por_directorio(directorio_base):
     """
-    Busca todos los archivos en el directorio base y subdirectorios,
+    Busca todos los archivos con patrones de fecha reconocibles en el directorio base y subdirectorios,
     y los agrupa por su directorio relativo.
+    Solo retorna archivos que pueden ser renombrados (tienen fecha extraíble).
     """
     archivos_encontrados = defaultdict(list)
     for directorio_actual, _, archivos in os.walk(directorio_base):
         for nombre_archivo in archivos:
-            dir_relativo = os.path.relpath(directorio_actual, directorio_base)
-            archivos_encontrados[dir_relativo].append(nombre_archivo)
+            # Solo agregar el archivo si tiene un patrón de fecha reconocible
+            fecha, _ = obtener_fecha_hora(nombre_archivo)
+            if fecha:  # Solo incluir archivos con fecha extraíble
+                dir_relativo = os.path.relpath(directorio_actual, directorio_base)
+                archivos_encontrados[dir_relativo].append(nombre_archivo)
                 
     return dict(archivos_encontrados)

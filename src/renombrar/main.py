@@ -23,30 +23,67 @@ from renombrar.ui.menu import (
     mostrar_resumen_archivos,
     mostrar_menu,
     mostrar_opciones_duplicado,
-    preguntar_continuar
+    preguntar_continuar,
+    mostrar_titulo,
+    mostrar_bienvenida,
+    mostrar_copyright_salida
 )
 
 def main():
     """Función principal del programa."""
     directorio_base = os.getcwd()
     extensiones_permitidas = (".jpg", ".jpeg", ".png", ".mkv", ".mp4", ".heic")
+    
+    # Mostrar pantalla de bienvenida solo la primera vez
+    if not mostrar_bienvenida():
+        print("\nPrograma cancelado por el usuario.")
+        mostrar_copyright_salida()
+        input("\nPresione cualquier tecla para salir...")
+        return
 
     while True:
-        print("Renombrar archivos de fotos y videos")
-        print("---> by JOT <--- ")
-        print("==========================================")
-        print(f"\nBuscando archivos en '{directorio_base}' y subdirectorios...\n")
+        mostrar_titulo()
+        print(f"Buscando archivos en '{directorio_base}' y subdirectorios...\n")
 
         archivos_por_directorio = encontrar_archivos_por_directorio(directorio_base)
         
         if not archivos_por_directorio:
-            print("No se encontraron archivos con patrones de nombre reconocibles.")
-            input("\nPresione cualquier tecla para salir...")
-            return
+            print("=" * 70)
+            print("NO SE ENCONTRARON ARCHIVOS PARA RENOMBRAR")
+            print("=" * 70)
+            print()
+            print("El programa no encontró archivos con patrones de nombre reconocibles")
+            print("en el directorio actual.")
+            print()
+            print("RECORDATORIO:")
+            print("  • Este programa debe ejecutarse en la carpeta que contiene")
+            print("    las fotos o videos a renombrar.")
+            print("  • El programa busca archivos con patrones como:")
+            print("    - IMG_YYYYMMDD_HHMMSS.jpg")
+            print("    - VID_YYYYMMDD_HHMMSS.mp4")
+            print("    - YYYYMMDD_HHMMSS.* (formato teléfono)")
+            print()
+            print(f"Directorio actual: {directorio_base}")
+            print()
+            
+            while True:
+                respuesta = input("¿Desea salir del programa? (s/n): ").lower().strip()
+                if respuesta in ['s', 'n']:
+                    if respuesta == 's':
+                        mostrar_copyright_salida()
+                        input("\nPresione cualquier tecla para salir...")
+                        return
+                    else:
+                        break
+                print("Por favor, responda con 's' para sí o 'n' para no.")
+            
+            # Si el usuario dice 'n', continuar el ciclo para volver a buscar
+            continue
 
         directorios_seleccionados = seleccionar_directorios(archivos_por_directorio)
         if not directorios_seleccionados:
             print("\nNo se seleccionaron directorios. Saliendo.")
+            mostrar_copyright_salida()
             input("\nPresione cualquier tecla para salir...")
             return
 
@@ -85,12 +122,14 @@ def main():
                     archivos_clasificados['otros_archivos'].append(archivo_info)
 
         if not mostrar_resumen_archivos(archivos_clasificados):
+            mostrar_copyright_salida()
             input("\nPresione cualquier tecla para salir...")
             return
 
         categorias_a_procesar = mostrar_menu(archivos_clasificados)
         if not categorias_a_procesar:
             print("\nOperación cancelada.")
+            mostrar_copyright_salida()
             input("\nPresione cualquier tecla para salir...")
             return
         

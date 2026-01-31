@@ -1,4 +1,73 @@
 import os
+import shutil
+import platform
+
+def limpiar_pantalla():
+    """Limpia la pantalla de la consola."""
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+
+def mostrar_copyright_salida():
+    """Muestra el copyright antes de salir del programa."""
+    print("\n" + "=" * 60)
+    print("© Jorge Osvaldo Tripodi (JOT) 2025".center(60))
+    print("Gracias por usar este programa".center(60))
+    print("=" * 60)
+
+def mostrar_titulo():
+    """Muestra el título centrado del programa."""
+    titulo = "Renombrar archivos de fotos y videos"
+    subtitulo = "---> by JOT <---"
+    copyright_text = "© Jorge Osvaldo Tripodi (JOT) 2025"
+    
+    # Obtener ancho de terminal (por defecto 80 si no se puede obtener)
+    try:
+        ancho_terminal = shutil.get_terminal_size().columns
+    except:
+        ancho_terminal = 80
+    
+    separador = "=" * ancho_terminal
+    
+    print(separador)
+    print(titulo.center(ancho_terminal))
+    print(subtitulo.center(ancho_terminal))
+    print(copyright_text.center(ancho_terminal))
+    print(separador)
+    print()
+
+def mostrar_bienvenida():
+    """Muestra la pantalla de bienvenida con ejemplos y pide confirmación."""
+    mostrar_titulo()
+    
+    print("Este programa renombra archivos de fotos y videos agregando la fecha y hora")
+    print("extraída del nombre del archivo al inicio del nombre.\n")
+    
+    print("EJEMPLOS DE TRANSFORMACIONES:")
+    print("-" * 70)
+    print()
+    print("  Archivos de imagen (IMG):")
+    print("    IMG_20230315_143022.jpg")
+    print("    → 2023-03-15 14-30-22 - IMG_20230315_143022.jpg")
+    print()
+    print("  Archivos de teléfono:")
+    print("    20231225_090000.mp4")
+    print("    → 2023-12-25 09-00-00 - 20231225_090000.mp4")
+    print()
+    print("  Archivos de video (VID):")
+    print("    VID_20240101_120000.mkv")
+    print("    → 2024-01-01 12-00-00 - VID_20240101_120000.mkv")
+    print()
+    print("-" * 70)
+    print()
+    
+    while True:
+        respuesta = input("¿Desea continuar con el programa? (s/n): ").lower().strip()
+        if respuesta in ['s', 'n']:
+            if respuesta == 's':
+                limpiar_pantalla()
+                return True
+            return False
+        print("Por favor, responda con 's' para sí o 'n' para no.")
+
 
 def seleccionar_directorios(archivos_por_directorio):
     """Muestra los directorios encontrados y permite al usuario seleccionar cuáles procesar."""
