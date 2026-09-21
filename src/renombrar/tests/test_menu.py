@@ -46,6 +46,16 @@ class TestMenu(unittest.TestCase):
         self.assertIsNotNone(resultado)
         self.assertIn('archivos_img', resultado)
 
+    @patch('builtins.input', side_effect=['2'])
+    def test_mostrar_menu_con_metadatos_y_fallback(self, mock_input):
+        """Prueba que el menú ofrezca opción separada para metadatos y fallback."""
+        archivos_clasificados = {
+            'archivos_con_metadatos': [("dir", "meta.jpg", "nuevo_meta.jpg")],
+            'archivos_fallback': [("dir", "fall.jpg", "nuevo_fall.jpg")]
+        }
+        resultado = mostrar_menu(archivos_clasificados)
+        self.assertEqual(resultado, ['archivos_con_metadatos'])
+
     @patch('builtins.input', side_effect=['a'])
     def test_mostrar_opciones_duplicado_opcion_a(self, mock_input):
         """Prueba la opción 'a' en caso de archivo duplicado."""

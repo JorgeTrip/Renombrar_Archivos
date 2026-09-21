@@ -30,7 +30,8 @@ from renombrar.ui.menu import (
 from renombrar.ui.menu_criterio import (
     seleccionar_criterio_renombrado,
     confirmar_renombrado_sin_hora,
-    preguntar_usar_fallback,
+    preguntar_opcion_sin_metadatos,
+    OPCION_SIN_META_FALLBACK,
     CRITERIO_PATRONES,
     CRITERIO_METADATOS,
     CRITERIO_SALIR
@@ -42,22 +43,26 @@ EXTENSIONES_PERMITIDAS = (
 )
 
 def _resolver_escaneo(criterio, dir_base):
-    """Ejecuta el escaneo según el criterio y retorna (archivos, criterio, omitidos)."""
+    """Ejecuta el escaneo y retorna (archivos, criterio, omitidos, fallback_por_dir)."""
     if criterio == CRITERIO_PATRONES:
         archivos, omitidos = encontrar_archivos_por_directorio(dir_base)
-        return archivos, criterio, omitidos
+        return archivos, criterio, omitidos, None
 
     con_meta, sin_meta, omitidos = encontrar_archivos_por_metadatos(dir_base, EXTENSIONES_PERMITIDAS)
     total_sin_meta = sum(len(archivos) for archivos in sin_meta.values())
+    fallback_por_dir = None
 
-    if total_sin_meta > 0 and preguntar_usar_fallback(sin_meta):
-        for dir_rel, nombres in sin_meta.items():
-            for nombre in nombres:
-                fecha, hora = obtener_fecha_hora(nombre)
-                if fecha:
-                    con_meta.setdefault(dir_rel, []).append((nombre, fecha, hora))
+    if total_sin_meta > 0:
+        decision = preguntar_opcion_sin_metadatos(sin_meta)
+        if decision == OPCION_SIN_META_FALLBACK:
+            fallback_por_dir = {}
+            for dir_rel, nombres in sin_meta.items():
+                for nombre in nombres:
+                    fecha, hora = obtener_fecha_hora(nombre)
+                    if fecha:
+                        fallback_por_dir.setdefault(dir_rel, []).append((nombre, fecha, hora))
 
-    return con_meta, criterio, omitidos
+    return con_meta, criterio, omitidos, fallback_por_dir
 
 def _mostrar_pantalla_sin_archivos(dir_base):
     """Muestra aviso si no se encontraron archivos candidatos."""
@@ -73,15 +78,20 @@ def _procesar_ciclo(dir_base):
         return False
 
     print(f"\nBuscando archivos en '{dir_base}' y subdirectorios...\n")
-    archivos_por_dir, criterio_activo, omitidos = _resolver_escaneo(criterio, dir_base)
+    archivos_por_dir, criterio_activo, omitidos, fallback_por_dir = _resolver_escaneo(criterio, dir_base)
 
     mostrar_aviso_ya_formateados(omitidos)
 
-    if not archivos_por_dir:
+    todos_dirs = dict(archivos_por_dir)
+    if fallback_por_dir:
+        for d, l in fallback_por_dir.items():
+            todos_dirs.setdefault(d, []).extend(l)
+
+    if not todos_dirs:
         _mostrar_pantalla_sin_archivos(dir_base)
         return preguntar_continuar()
 
-    directorios_sel = seleccionar_directorios(archivos_por_dir)
+    directorios_sel = seleccionar_directorios(todos_dirs)
     if not directorios_sel:
         print("\nNo se seleccionaron directorios.")
         return False
@@ -89,7 +99,8 @@ def _procesar_ciclo(dir_base):
     if criterio_activo == CRITERIO_METADATOS:
         clasificados = clasificar_archivos_por_metadatos(
             archivos_por_dir, directorios_sel, EXTENSIONES_PERMITIDAS,
-            callback_sin_hora=confirmar_renombrado_sin_hora
+            callback_sin_hora=confirmar_renombrado_sin_hora,
+            archivos_fallback_por_dir=fallback_por_dir
         )
     else:
         clasificados = clasificar_archivos_por_patron(
@@ -105,14 +116,17 @@ def _procesar_ciclo(dir_base):
         return False
 
     archivos_a_procesar = []
+    vistos = set()
     for cat in categorias_sel:
-        archivos_a_procesar.extend(clasificados.get(cat, []))
+        for item in clasificados.get(cat, []):
+            if item not in vistos:
+                vistos.add(item)
+                archivos_a_procesar.append(item)
 
     if not archivos_a_procesar:
         print("\nNo hay archivos en las categorías seleccionadas.")
         return preguntar_continuar()
 
-    # Previsualización y confirmación obligatoria previa al renombrado
     if not mostrar_previsualizacion_y_confirmar(archivos_a_procesar):
         print("\nOperación cancelada por el usuario. No se modificó ningún archivo.")
         return preguntar_continuar()

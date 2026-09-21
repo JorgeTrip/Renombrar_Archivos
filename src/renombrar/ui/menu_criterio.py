@@ -1,11 +1,14 @@
 """
 Módulo de interfaz de usuario para selección del criterio de renombramiento
-y confirmaciones interactivas asociadas a metadatos.
+y confirmaciones interactivas asociadas a metadatos y fallback.
 """
 
 CRITERIO_PATRONES = 1
 CRITERIO_METADATOS = 2
 CRITERIO_SALIR = 3
+
+OPCION_SIN_META_OMITIR = 1
+OPCION_SIN_META_FALLBACK = 2
 
 def seleccionar_criterio_renombrado():
     """Presenta al usuario las opciones de criterio de renombramiento."""
@@ -47,10 +50,10 @@ def confirmar_renombrado_sin_hora(nombre_archivo, nuevo_nombre_propuesto):
             return False
         print("Por favor, responda con 's' para si o 'n' para no.")
 
-def preguntar_usar_fallback(archivos_sin_metadatos):
+def preguntar_opcion_sin_metadatos(archivos_sin_metadatos):
     """
     Advierte que se encontraron archivos sin metadatos, los lista agrupados por carpeta,
-    y consulta si desea aplicar el mecanismo de fallback (búsqueda de patrones en el nombre).
+    y ofrece la opción de omitirlos por completo o intentar renombrarlos por fallback.
     """
     if isinstance(archivos_sin_metadatos, dict):
         total = sum(len(lista) for lista in archivos_sin_metadatos.values())
@@ -70,12 +73,18 @@ def preguntar_usar_fallback(archivos_sin_metadatos):
                 for nombre in lista:
                     print(f"    - {nombre}")
 
-    print("\nPuede intentar renombrarlos usando la busqueda de patrones en sus nombres (fallback).")
+    print("\nQue desea hacer con estos archivos sin metadatos?")
+    print("  1. Omitirlos (NO renombrarlos de ninguna manera)")
+    print("  2. Intentar renombrarlos por busqueda de patrones en el nombre (fallback)")
 
     while True:
-        respuesta = input("\nDesea aplicar fallback a estos archivos? (s/n): ").lower().strip()
-        if respuesta in ("s", "si"):
-            return True
-        if respuesta in ("n", "no"):
-            return False
-        print("Por favor, responda con 's' para si o 'n' para no.")
+        opcion = input("\nSeleccione una opcion (1-2): ").strip()
+        if opcion == "1":
+            return OPCION_SIN_META_OMITIR
+        if opcion == "2":
+            return OPCION_SIN_META_FALLBACK
+        print("Por favor, ingrese 1 para omitir o 2 para aplicar fallback.")
+
+def preguntar_usar_fallback(archivos_sin_metadatos):
+    """Mantiene compatibilidad hacia atrás delegando en preguntar_opcion_sin_metadatos."""
+    return preguntar_opcion_sin_metadatos(archivos_sin_metadatos) == OPCION_SIN_META_FALLBACK

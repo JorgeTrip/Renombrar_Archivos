@@ -38,43 +38,57 @@ def clasificar_archivos_por_patron(archivos_por_dir, dirs_seleccionados, exts_pe
                 clasificados['otros_archivos'].append(info)
     return clasificados
 
-def clasificar_archivos_por_metadatos(archivos_por_dir, dirs_seleccionados, exts_permitidas, callback_sin_hora=None):
-    """
-    Clasifica los archivos detectados por metadatos.
-    Cada elemento en archivos_por_dir[dir_rel] es (nombre, fecha, hora).
-    """
+def _clasificar_item(info, nombre, exts_permitidas, clasificados):
+    """Clasifica un archivo individual según su extensión o patrón."""
+    exts_video = (".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".webm", ".m4v", ".3gp")
+    nombre_lower = nombre.lower()
+    nombre_upper = nombre.upper()
+    if not nombre_lower.endswith(exts_permitidas):
+        clasificados['archivos_sugeridos'].append(info)
+    elif tiene_formato_telefono(nombre):
+        clasificados['archivos_telefono'].append(info)
+    elif nombre_lower.endswith(exts_video) or nombre_upper.startswith("VID"):
+        clasificados['archivos_vid'].append(info)
+    elif nombre_upper.startswith("IMG") or not nombre_lower.endswith(exts_video):
+        clasificados['archivos_img'].append(info)
+    else:
+        clasificados['otros_archivos'].append(info)
+
+def clasificar_archivos_por_metadatos(
+    archivos_por_dir, dirs_seleccionados, exts_permitidas,
+    callback_sin_hora=None, archivos_fallback_por_dir=None
+):
+    """Clasifica los archivos detectados por metadatos y por fallback opcional."""
     clasificados = {
         'archivos_img': [], 'archivos_vid': [], 'otros_archivos': [],
-        'archivos_telefono': [], 'archivos_sugeridos': []
+        'archivos_telefono': [], 'archivos_sugeridos': [],
+        'archivos_con_metadatos': [], 'archivos_fallback': []
     }
-    exts_video = (".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".webm", ".m4v", ".3gp")
+    # 1. Procesar archivos con metadatos reales
     for dir_rel in dirs_seleccionados:
         for item in archivos_por_dir.get(dir_rel, []):
             nombre, fecha, hora = item
             nuevo = formatear_nombre_destino(nombre, fecha, hora)
             if nombre == nuevo:
                 continue
-
-            # Si no tiene hora, solicitar confirmación interactiva si existe callback
-            if hora is None and callback_sin_hora:
-                aceptar = callback_sin_hora(nombre, nuevo)
-                if not aceptar:
-                    continue
-
+            if hora is None and callback_sin_hora and not callback_sin_hora(nombre, nuevo):
+                continue
             info = (dir_rel, nombre, nuevo)
-            nombre_lower = nombre.lower()
-            nombre_upper = nombre.upper()
+            clasificados['archivos_con_metadatos'].append(info)
+            _clasificar_item(info, nombre, exts_permitidas, clasificados)
 
-            if not nombre_lower.endswith(exts_permitidas):
-                clasificados['archivos_sugeridos'].append(info)
-            elif tiene_formato_telefono(nombre):
-                clasificados['archivos_telefono'].append(info)
-            elif nombre_lower.endswith(exts_video) or nombre_upper.startswith("VID"):
-                clasificados['archivos_vid'].append(info)
-            elif nombre_upper.startswith("IMG") or not nombre_lower.endswith(exts_video):
-                clasificados['archivos_img'].append(info)
-            else:
-                clasificados['otros_archivos'].append(info)
+    # 2. Procesar archivos por fallback (si existen)
+    if archivos_fallback_por_dir:
+        for dir_rel in dirs_seleccionados:
+            for item in archivos_fallback_por_dir.get(dir_rel, []):
+                nombre, fecha, hora = item
+                nuevo = formatear_nombre_destino(nombre, fecha, hora)
+                if nombre == nuevo:
+                    continue
+                info = (dir_rel, nombre, nuevo)
+                clasificados['archivos_fallback'].append(info)
+                _clasificar_item(info, nombre, exts_permitidas, clasificados)
+
     return clasificados
 
 def _generar_nombre_con_sufijo(nuevo_nombre, letra):
@@ -83,13 +97,9 @@ def _generar_nombre_con_sufijo(nuevo_nombre, letra):
     return f"{base}{letra}{ext}"
 
 def ejecutar_renombrado_lote(archivos_a_procesar, dir_base, callback_duplicado):
-    """
-    Ejecuta el renombrado sobre la lista de archivos seleccionados.
-    Gestiona colisiones de nombres mediante letras secuenciales o salto.
-    """
+    """Ejecuta el renombrado sobre la lista de archivos seleccionados."""
     renombrados = 0
     cambios = []
-
     for dir_rel, original, nuevo_propuesto in archivos_a_procesar:
         dir_abs = os.path.abspath(os.path.join(dir_base, dir_rel))
         ruta_orig = os.path.join(dir_abs, original)
@@ -107,7 +117,6 @@ def ejecutar_renombrado_lote(archivos_a_procesar, dir_base, callback_duplicado):
                 if renombrar_archivo(ruta_orig, ruta_dest):
                     renombrados += 1
                     cambios.append((original, nuevo_final))
-            # Si es opción 'b' o saltar, se omite
         else:
             if renombrar_archivo(ruta_orig, ruta_dest):
                 renombrados += 1

@@ -83,7 +83,9 @@ def mostrar_aviso_ya_formateados(cantidad):
 
 def mostrar_resumen_archivos(archivos_clasificados):
     """Muestra un resumen de los archivos encontrados en los directorios seleccionados."""
-    total = sum(len(l) for l in archivos_clasificados.values())
+    total = sum(len(l) for k, l in archivos_clasificados.items() if k not in ('archivos_con_metadatos', 'archivos_fallback'))
+    if total == 0:
+        total = sum(len(l) for l in archivos_clasificados.values())
     if total == 0:
         print("No se encontraron archivos para renombrar en la seleccion.")
         return False
@@ -105,9 +107,23 @@ def mostrar_resumen_archivos(archivos_clasificados):
 def mostrar_menu(archivos_clasificados):
     """Muestra el menú principal y obtiene la opción seleccionada."""
     print("\nOpciones de renombrado:")
-    opciones = {1: ("Todos los archivos", list(archivos_clasificados.keys()))}
+    cats_formato = [k for k in ['archivos_img', 'archivos_vid', 'archivos_telefono', 'otros_archivos', 'archivos_sugeridos'] if archivos_clasificados.get(k)]
+    todas = cats_formato if cats_formato else list(archivos_clasificados.keys())
+    opciones = {1: ("Todos los archivos", todas)}
     print("1. Todos los archivos")
     idx = 2
+
+    # Segmentación opcional entre metadatos y fallback
+    if archivos_clasificados.get('archivos_con_metadatos') and archivos_clasificados.get('archivos_fallback'):
+        cant_meta = len(archivos_clasificados['archivos_con_metadatos'])
+        cant_fall = len(archivos_clasificados['archivos_fallback'])
+        opciones[idx] = (f"Solo archivos con metadatos ({cant_meta})", ['archivos_con_metadatos'])
+        print(f"{idx}. Solo archivos con metadatos ({cant_meta})")
+        idx += 1
+        opciones[idx] = (f"Solo archivos por fallback ({cant_fall})", ['archivos_fallback'])
+        print(f"{idx}. Solo archivos por fallback ({cant_fall})")
+        idx += 1
+
     for clave, txt in [('archivos_img', "Archivos IMG"), ('archivos_vid', "Archivos VID"),
                        ('archivos_telefono', "Archivos TELEFONO"), ('archivos_sugeridos', "Archivos SUGERIDOS")]:
         if archivos_clasificados.get(clave):
