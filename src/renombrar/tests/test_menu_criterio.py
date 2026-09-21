@@ -1,6 +1,5 @@
 """
 Pruebas unitarias para el módulo ui/menu_criterio.py.
-Fase Roja del ciclo TDD.
 """
 
 import unittest
@@ -49,13 +48,20 @@ class TestMenuCriterio(unittest.TestCase):
         self.assertFalse(resultado)
 
     @patch('builtins.input', side_effect=['s'])
-    def test_preguntar_usar_fallback_afirmativo(self, mock_input):
-        resultado = preguntar_usar_fallback(5)
+    def test_preguntar_usar_fallback_afirmativo_con_dict(self, mock_input):
+        archivos_sin = {
+            "Subcarpeta A": ["foto1.jpg", "foto2.jpg"],
+            "Subcarpeta B": ["video1.mp4"]
+        }
+        resultado = preguntar_usar_fallback(archivos_sin)
         self.assertTrue(resultado)
 
     @patch('builtins.input', side_effect=['n'])
-    def test_preguntar_usar_fallback_negativo(self, mock_input):
-        resultado = preguntar_usar_fallback(5)
+    def test_preguntar_usar_fallback_negativo_con_dict(self, mock_input):
+        archivos_sin = {
+            ".": ["foto_suelta.jpg"]
+        }
+        resultado = preguntar_usar_fallback(archivos_sin)
         self.assertFalse(resultado)
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ def _resolver_escaneo(criterio, dir_base):
     con_meta, sin_meta, omitidos = encontrar_archivos_por_metadatos(dir_base, EXTENSIONES_PERMITIDAS)
     total_sin_meta = sum(len(archivos) for archivos in sin_meta.values())
 
-    if total_sin_meta > 0 and preguntar_usar_fallback(total_sin_meta):
+    if total_sin_meta > 0 and preguntar_usar_fallback(sin_meta):
         for dir_rel, nombres in sin_meta.items():
             for nombre in nombres:
                 fecha, hora = obtener_fecha_hora(nombre)

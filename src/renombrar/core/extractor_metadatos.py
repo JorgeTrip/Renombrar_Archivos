@@ -1,10 +1,10 @@
 """
 Módulo para autodetección de formatos y extracción de metadatos de fotos y videos.
-Soporta JPEG, PNG, HEIC, TIFF, WebP, MP4, MOV, MKV, AVI y WAV.
+Soporta JPEG, PNG, HEIC, TIFF, WebP, MP4, MOV, MKV, AVI y WAV con conversión UTC a local.
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from PIL import Image
 
 try:
@@ -25,7 +25,6 @@ except ImportError:
     createParser = None
     extractMetadata = None
 
-# Tipos de formatos detectados
 TIPO_IMAGEN_EXIF = "IMAGEN_EXIF"
 TIPO_IMAGEN_HEIC = "IMAGEN_HEIC"
 TIPO_VIDEO_MUTAGEN = "VIDEO_MUTAGEN"
@@ -53,39 +52,45 @@ def detectar_tipo_archivo(ruta_archivo):
         return TIPO_AUDIO_WAV
     return TIPO_DESCONOCIDO
 
-def _parsear_cadena_fecha(cadena):
-    """Parsea una cadena de fecha/hora en formato (YYYY-MM-DD, HH-MM-SS o None)."""
+def convertir_utc_a_local(dt):
+    """Convierte un datetime UTC a la zona horaria local del sistema operativo."""
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone()
+
+def _parsear_cadena_fecha(cadena, es_video=False):
+    """Parsea una cadena de fecha/hora y convierte UTC a hora local si corresponde."""
     if not cadena:
         return None, None
     texto = str(cadena).strip()
     formatos = [
-        "%Y:%m:%d %H:%M:%S",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%SZ",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y:%m:%d",
-        "%Y-%m-%d"
+        "%Y:%m:%d %H:%M:%S", "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S",
+        "%Y:%m:%d", "%Y-%m-%d"
     ]
     for fmt in formatos:
         try:
             dt = datetime.strptime(texto, fmt)
+            tiene_hora = "%H" in fmt
+            if es_video and tiene_hora:
+                dt = convertir_utc_a_local(dt)
             fecha = dt.strftime("%Y-%m-%d")
-            hora = dt.strftime("%H-%M-%S") if ("%H" in fmt) else None
+            hora = dt.strftime("%H-%M-%S") if tiene_hora else None
             return fecha, hora
         except ValueError:
             continue
     return None, None
 
 def _extraer_exif_imagen(ruta_archivo):
-    """Extrae fecha y hora desde metadatos EXIF con Pillow."""
+    """Extrae fecha y hora local desde metadatos EXIF con Pillow."""
     try:
         with Image.open(ruta_archivo) as img:
             exif = img.getexif()
             if not exif:
                 return None, None
-            # Probar DateTimeOriginal (36867), DateTimeDigitized (36868), DateTime (306)
             etiquetas = [36867, 36868, 306]
-            # Si tiene ifd Exif (0x8769), consultar allí primero
             try:
                 exif_ifd = exif.get_ifd(0x8769)
             except Exception:
@@ -94,7 +99,7 @@ def _extraer_exif_imagen(ruta_archivo):
             for tag in etiquetas:
                 valor = exif_ifd.get(tag) or exif.get(tag)
                 if valor:
-                    fecha, hora = _parsear_cadena_fecha(valor)
+                    fecha, hora = _parsear_cadena_fecha(valor, es_video=False)
                     if fecha:
                         return fecha, hora
     except Exception:
@@ -102,17 +107,16 @@ def _extraer_exif_imagen(ruta_archivo):
     return None, None
 
 def _extraer_video_mutagen(ruta_archivo):
-    """Extrae metadatos de video mediante mutagen."""
+    """Extrae metadatos de video mediante mutagen convirtiendo UTC a hora local."""
     if not mutagen:
         return None, None
     try:
         medio = mutagen.File(ruta_archivo)
         if medio and medio.tags:
-            # MP4 \xa9day tag
             clave_dia = medio.tags.get("\xa9day")
             if clave_dia:
                 valor = clave_dia[0] if isinstance(clave_dia, list) else clave_dia
-                fecha, hora = _parsear_cadena_fecha(valor)
+                fecha, hora = _parsear_cadena_fecha(valor, es_video=True)
                 if fecha:
                     return fecha, hora
     except Exception:
@@ -120,7 +124,7 @@ def _extraer_video_mutagen(ruta_archivo):
     return None, None
 
 def _extraer_video_hachoir(ruta_archivo):
-    """Extrae metadatos mediante hachoir como analizador universal."""
+    """Extrae metadatos mediante hachoir convirtiendo creación UTC a hora local."""
     if not createParser or not extractMetadata:
         return None, None
     try:
@@ -132,34 +136,27 @@ def _extraer_video_hachoir(ruta_archivo):
             if metadatos and metadatos.has("creation_date"):
                 dt = metadatos.get("creation_date")
                 if isinstance(dt, datetime):
-                    return dt.strftime("%Y-%m-%d"), dt.strftime("%H-%M-%S")
+                    dt_local = convertir_utc_a_local(dt)
+                    return dt_local.strftime("%Y-%m-%d"), dt_local.strftime("%H-%M-%S")
     except Exception:
         pass
     return None, None
 
 def extraer_metadatos_fecha_hora(ruta_archivo):
-    """
-    Punto de entrada principal con autodetección de formato y cascada de librerías.
-    Retorna tupla (fecha, hora). Si no existe fecha, retorna (None, None).
-    """
+    """Punto de entrada principal con autodetección de formato y cascada de librerías."""
     if not os.path.exists(ruta_archivo) or not os.path.isfile(ruta_archivo):
         return None, None
 
     tipo = detectar_tipo_archivo(ruta_archivo)
-
     if tipo in (TIPO_IMAGEN_EXIF, TIPO_IMAGEN_HEIC):
         return _extraer_exif_imagen(ruta_archivo)
 
     if tipo == TIPO_VIDEO_MUTAGEN:
         fecha, hora = _extraer_video_mutagen(ruta_archivo)
-        if fecha:
-            return fecha, hora
-        return _extraer_video_hachoir(ruta_archivo)
+        return (fecha, hora) if fecha else _extraer_video_hachoir(ruta_archivo)
 
     if tipo == TIPO_VIDEO_HACHOIR:
         fecha, hora = _extraer_video_hachoir(ruta_archivo)
-        if fecha:
-            return fecha, hora
-        return _extraer_video_mutagen(ruta_archivo)
+        return (fecha, hora) if fecha else _extraer_video_mutagen(ruta_archivo)
 
     return None, None
