@@ -78,27 +78,41 @@ class TestDateUtils(unittest.TestCase):
             self.assertFalse(tiene_formato_telefono(nombre))
 
     def test_tiene_formato_destino_completo(self):
-        """Prueba detección de formato completo YYYY-MM-DD HH-MM-SS - ..."""
+        """Prueba detección flexible de formato completo YYYY-MM-DD HH-MM-SS seguido de texto o separador."""
+        # Con guión y espacios
         self.assertTrue(tiene_formato_destino_completo("2023-08-15 14-30-22 - foto.jpg"))
-        self.assertTrue(tiene_formato_destino_completo("2023-08-15 14-30-22 - fotoa.jpg"))
+        # Con texto descriptivo directo (caso reportado por el usuario)
+        self.assertTrue(tiene_formato_destino_completo("2026-08-17 08-20-04 Loren.jpg"))
+        # Con guión bajo
+        self.assertTrue(tiene_formato_destino_completo("2026-08-17 08-20-04_Loren.jpg"))
+        # Directamente la extensión
+        self.assertTrue(tiene_formato_destino_completo("2026-08-17 08-20-04.jpg"))
+        # Casos que NO tienen formato completo
         self.assertFalse(tiene_formato_destino_completo("2023-08-15 - foto.jpg"))
+        self.assertFalse(tiene_formato_destino_completo("2023-08-15 Loren.jpg"))
         self.assertFalse(tiene_formato_destino_completo("IMG_20230815_143022.jpg"))
 
     def test_tiene_formato_destino_solo_fecha(self):
-        """Prueba detección de formato solo fecha YYYY-MM-DD - ..."""
+        """Prueba detección de formato solo fecha YYYY-MM-DD seguido de texto o separador."""
         self.assertTrue(tiene_formato_destino_solo_fecha("2023-08-15 - foto.jpg"))
+        self.assertTrue(tiene_formato_destino_solo_fecha("2023-08-15 Loren.jpg"))
         self.assertFalse(tiene_formato_destino_solo_fecha("2023-08-15 14-30-22 - foto.jpg"))
+        self.assertFalse(tiene_formato_destino_solo_fecha("2026-08-17 08-20-04 Loren.jpg"))
         self.assertFalse(tiene_formato_destino_solo_fecha("foto.jpg"))
 
     def test_limpiar_prefijo_fecha_existente(self):
-        """Prueba remover prefijo existente para no duplicar fechas."""
+        """Prueba remover prefijo existente flexiblemente para no duplicar fechas."""
         self.assertEqual(
             limpiar_prefijo_fecha_existente("2023-08-15 - foto.jpg"),
             "foto.jpg"
         )
         self.assertEqual(
-            limpiar_prefijo_fecha_existente("2023-08-15 14-30-22 - foto.jpg"),
-            "foto.jpg"
+            limpiar_prefijo_fecha_existente("2026-08-17 08-20-04 Loren.jpg"),
+            "Loren.jpg"
+        )
+        self.assertEqual(
+            limpiar_prefijo_fecha_existente("2026-08-17 Loren.jpg"),
+            "Loren.jpg"
         )
         self.assertEqual(
             limpiar_prefijo_fecha_existente("foto.jpg"),
