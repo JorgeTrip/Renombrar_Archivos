@@ -3,10 +3,8 @@ Pruebas unitarias para el módulo date_utils.
 """
 
 import unittest
-from datetime import datetime
-from ..core.date_utils import (
+from renombrar.core.date_utils import (
     obtener_fecha_hora,
-    obtener_fecha_hora_wav,
     obtener_fecha_hora_desde_nombre,
     archivo_tiene_formato_destino,
     tiene_formato_telefono
@@ -14,95 +12,67 @@ from ..core.date_utils import (
 
 class TestDateUtils(unittest.TestCase):
     """Clase para probar las funciones del módulo date_utils."""
-    
-    def test_obtener_fecha_hora(self):
-        """Prueba la función obtener_fecha_hora."""
-        # Prueba con un archivo que tiene fecha en el nombre
+
+    def test_obtener_fecha_hora_con_fecha_y_hora(self):
+        """Prueba la extracción de fecha y hora cuando están presentes en el nombre."""
         nombre = "IMG_20230101_123456.jpg"
-        fecha = obtener_fecha_hora(nombre)
-        self.assertIsInstance(fecha, datetime)
-        self.assertEqual(fecha.year, 2023)
-        self.assertEqual(fecha.month, 1)
-        self.assertEqual(fecha.day, 1)
-        self.assertEqual(fecha.hour, 12)
-        self.assertEqual(fecha.minute, 34)
-        self.assertEqual(fecha.second, 56)
-        
-        # Prueba con un archivo que no tiene fecha en el nombre
+        fecha, hora = obtener_fecha_hora(nombre)
+        self.assertEqual(fecha, "2023-01-01")
+        self.assertEqual(hora, "12-34-56")
+
+    def test_obtener_fecha_hora_sin_fecha(self):
+        """Prueba con un archivo que no tiene fecha en el nombre."""
         nombre = "foto.jpg"
-        fecha = obtener_fecha_hora(nombre)
-        self.assertIsInstance(fecha, datetime)
-    
-    def test_obtener_fecha_hora_wav(self):
-        """Prueba la función obtener_fecha_hora_wav."""
-        # Prueba con un archivo WAV
-        nombre = "audio.wav"
-        fecha = obtener_fecha_hora_wav(nombre)
-        self.assertIsInstance(fecha, datetime)
-    
-    def test_obtener_fecha_hora_desde_nombre(self):
-        """Prueba la función obtener_fecha_hora_desde_nombre."""
-        # Prueba con diferentes formatos de fecha
-        formatos = [
-            "IMG_20230101_123456.jpg",
-            "20230101_123456.jpg",
-            "2023-01-01 12:34:56.jpg",
-            "2023/01/01 12:34:56.jpg"
+        fecha, hora = obtener_fecha_hora(nombre)
+        self.assertIsNone(fecha)
+        self.assertIsNone(hora)
+
+    def test_obtener_fecha_hora_desde_nombre_formatos(self):
+        """Prueba con diferentes formatos de fecha en el nombre."""
+        casos = [
+            ("IMG_20230101_123456.jpg", "2023-01-01", "12-34-56"),
+            ("20230101_123456.jpg", "2023-01-01", "12-34-56"),
+            ("2023-01-01 12-34-56.jpg", "2023-01-01", "12-34-56"),
+            ("2023-01-01.jpg", "2023-01-01", None)
         ]
-        
-        for nombre in formatos:
-            fecha = obtener_fecha_hora_desde_nombre(nombre)
-            self.assertIsInstance(fecha, datetime)
-            self.assertEqual(fecha.year, 2023)
-            self.assertEqual(fecha.month, 1)
-            self.assertEqual(fecha.day, 1)
-            self.assertEqual(fecha.hour, 12)
-            self.assertEqual(fecha.minute, 34)
-            self.assertEqual(fecha.second, 56)
-    
+        for nombre, exp_fecha, exp_hora in casos:
+            fecha, hora = obtener_fecha_hora_desde_nombre(nombre)
+            self.assertEqual(fecha, exp_fecha)
+            self.assertEqual(hora, exp_hora)
+
     def test_archivo_tiene_formato_destino(self):
         """Prueba la función archivo_tiene_formato_destino."""
-        # Prueba con archivos que tienen el formato destino
         nombres_validos = [
-            "20230101_123456.jpg",
-            "20230101_123456_a.jpg",
-            "20230101_123456_b.jpg"
+            "2023-01-01 12-34-56 - foto.jpg",
+            "2023-01-01 12-34-56 - IMG_1234.jpg"
         ]
-        
         for nombre in nombres_validos:
             self.assertTrue(archivo_tiene_formato_destino(nombre))
-        
-        # Prueba con archivos que no tienen el formato destino
-        nombres_invalidos = [
-            "foto.jpg",
-            "IMG_20230101_123456.jpg",
-            "2023-01-01 12:34:56.jpg"
-        ]
-        
-        for nombre in nombres_invalidos:
-            self.assertFalse(archivo_tiene_formato_destino(nombre))
-    
-    def test_tiene_formato_telefono(self):
-        """Prueba la función tiene_formato_telefono."""
-        # Prueba con archivos que tienen formato de teléfono
-        nombres_validos = [
-            "IMG-20230101-WA0000.jpg",
-            "IMG-20230101-WA0001.jpg",
-            "IMG-20230101-WA9999.jpg"
-        ]
-        
-        for nombre in nombres_validos:
-            self.assertTrue(tiene_formato_telefono(nombre))
-        
-        # Prueba con archivos que no tienen formato de teléfono
+
         nombres_invalidos = [
             "foto.jpg",
             "IMG_20230101_123456.jpg",
             "20230101_123456.jpg"
         ]
-        
+        for nombre in nombres_invalidos:
+            self.assertFalse(archivo_tiene_formato_destino(nombre))
+
+    def test_tiene_formato_telefono(self):
+        """Prueba la función tiene_formato_telefono."""
+        nombres_validos = [
+            "20230101_123456.jpg",
+            "20241225_090000.mp4"
+        ]
+        for nombre in nombres_validos:
+            self.assertTrue(tiene_formato_telefono(nombre))
+
+        nombres_invalidos = [
+            "foto.jpg",
+            "IMG_20230101_123456.jpg",
+            "VID_20230101_123456.mp4"
+        ]
         for nombre in nombres_invalidos:
             self.assertFalse(tiene_formato_telefono(nombre))
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()

@@ -1,3 +1,7 @@
+"""
+Módulo de interfaz de usuario con menús de selección, resumen y salida.
+"""
+
 import os
 import shutil
 import platform
@@ -15,50 +19,34 @@ def mostrar_copyright_salida():
 
 def mostrar_titulo():
     """Muestra el título centrado del programa."""
-    titulo = "Renombrar archivos de fotos y videos - v1.8"
+    titulo = "Renombrar archivos de fotos y videos - v1.9"
     subtitulo = "---> by JOT <---"
     copyright_text = "© Jorge Osvaldo Tripodi (JOT) 2025"
-    
-    # Obtener ancho de terminal (por defecto 80 si no se puede obtener)
     try:
         ancho_terminal = shutil.get_terminal_size().columns
-    except:
+    except Exception:
         ancho_terminal = 80
-    
     separador = "=" * ancho_terminal
-    
     print(separador)
     print(titulo.center(ancho_terminal))
     print(subtitulo.center(ancho_terminal))
     print(copyright_text.center(ancho_terminal))
-    print(separador)
-    print()
+    print(separador + "\n")
 
 def mostrar_bienvenida():
     """Muestra la pantalla de bienvenida con ejemplos y pide confirmación."""
     mostrar_titulo()
-    
-    print("Este programa renombra archivos de fotos y videos agregando la fecha y hora")
-    print("extraída del nombre del archivo al inicio del nombre.\n")
-    
-    print("EJEMPLOS DE TRANSFORMACIONES:")
+    print("Este programa renombra archivos multimedia agregando fecha y hora al inicio.")
+    print("\nCRITERIOS SOPORTADOS:")
+    print("  1. Por patrones en el nombre del archivo (IMG_, VID_, formato teléfono)")
+    print("  2. Por metadatos incrustados de captura/creación (EXIF / Video)\n")
+    print("EJEMPLOS:")
     print("-" * 70)
-    print()
-    print("  Archivos de imagen (IMG):")
-    print("    IMG_20230315_143022.jpg")
-    print("    → 2023-03-15 14-30-22 - IMG_20230315_143022.jpg")
-    print()
-    print("  Archivos de teléfono:")
-    print("    20231225_090000.mp4")
-    print("    → 2023-12-25 09-00-00 - 20231225_090000.mp4")
-    print()
-    print("  Archivos de video (VID):")
-    print("    VID_20240101_120000.mkv")
-    print("    → 2024-01-01 12-00-00 - VID_20240101_120000.mkv")
-    print()
-    print("-" * 70)
-    print()
-    
+    print("  • IMG_20230315_143022.jpg   → 2023-03-15 14-30-22 - IMG_20230315_143022.jpg")
+    print("  • 20231225_090000.mp4       → 2023-12-25 09-00-00 - 20231225_090000.mp4")
+    print("  • VID_20240101_120000.mkv   → 2024-01-01 12-00-00 - VID_20240101_120000.mkv")
+    print("-" * 70 + "\n")
+
     while True:
         respuesta = input("¿Desea continuar con el programa? (s/n): ").lower().strip()
         if respuesta in ['s', 'n']:
@@ -68,12 +56,11 @@ def mostrar_bienvenida():
             return False
         print("Por favor, responda con 's' para sí o 'n' para no.")
 
-
 def seleccionar_directorios(archivos_por_directorio):
-    """Muestra los directorios encontrados y permite al usuario seleccionar cuáles procesar."""
+    """Muestra los directorios encontrados y permite seleccionar cuáles procesar."""
     directorios = list(archivos_por_directorio.keys())
     if not directorios:
-        print("No se encontraron directorios con archivos que coincidan con los patrones.")
+        print("No se encontraron directorios con archivos para procesar.")
         return []
 
     print("Se encontraron archivos en los siguientes directorios:")
@@ -82,20 +69,17 @@ def seleccionar_directorios(archivos_por_directorio):
         print(f"  {i + 1}. {nombre_dir} ({len(archivos_por_directorio[ruta])} archivos)")
 
     print("\nSeleccione los directorios a procesar:")
-    print("  - Para seleccionar varios, sepárelos por comas (ej: 1,3).")
-    print("  - Para seleccionar todos, escriba 'todos'.")
+    print("  - Para varios, sepárelos por comas (ej: 1,3). Escriba 'todos' para todos.")
 
     while True:
         seleccion = input("\nOpción: ").lower().strip()
         if seleccion == 'todos':
             return directorios
-        
         try:
             indices = [int(i.strip()) - 1 for i in seleccion.split(',')]
             if all(0 <= i < len(directorios) for i in indices):
                 return [directorios[i] for i in indices]
-            else:
-                print("Error: Uno o más números están fuera de rango.")
+            print("Error: Uno o más números están fuera de rango.")
         except ValueError:
             print("Error: Entrada no válida. Use números separados por comas o 'todos'.")
 
@@ -107,7 +91,6 @@ def mostrar_resumen_archivos(archivos_clasificados):
         return False
 
     print(f"\nSe encontraron {total} archivos en total en los directorios seleccionados:")
-    
     categorias = {
         'archivos_telefono': "[TELÉFONO]",
         'archivos_img': "[IMG]",
@@ -125,9 +108,7 @@ def mostrar_resumen_archivos(archivos_clasificados):
                 if original != nuevo:
                     print(f"  {ruta_mostrada} -> {nuevo}")
                 else:
-                    # Para archivos sugeridos que no se renombran pero coinciden con el patrón
                     print(f"  {ruta_mostrada}")
-    
     return True
 
 def mostrar_menu(archivos_clasificados):
@@ -135,13 +116,10 @@ def mostrar_menu(archivos_clasificados):
     print("\nOpciones de renombrado:")
     opciones = {}
     idx = 1
-
-    # Opción para todos los archivos
     opciones[idx] = ("Todos los archivos", list(archivos_clasificados.keys()))
     print(f"{idx}. Todos los archivos")
     idx += 1
 
-    # Opciones por categoría
     categorias = {
         'archivos_img': "Archivos IMG",
         'archivos_vid': "Archivos VID",
@@ -154,13 +132,11 @@ def mostrar_menu(archivos_clasificados):
             print(f"{idx}. {texto}")
             idx += 1
 
-    # Opción para IMG y VID juntos
     if archivos_clasificados.get('archivos_img') and archivos_clasificados.get('archivos_vid'):
         opciones[idx] = ("Archivos IMG y VID", ['archivos_img', 'archivos_vid'])
         print(f"{idx}. Archivos IMG y VID")
         idx += 1
 
-    # Opción de salida
     opcion_salir = idx
     print(f"{opcion_salir}. Salir sin hacer cambios")
 
@@ -168,33 +144,28 @@ def mostrar_menu(archivos_clasificados):
         try:
             seleccion = int(input(f"\nSeleccione una opción (1-{opcion_salir}): "))
             if seleccion == opcion_salir:
-                return None  # Indicar salida
+                return None
             if seleccion in opciones:
-                return opciones[seleccion][1]  # Devuelve las claves de las categorías a procesar
+                return opciones[seleccion][1]
             print(f"\nPor favor, seleccione una opción válida (1-{opcion_salir})")
         except ValueError:
             print("\nPor favor, ingrese un número válido")
 
 def mostrar_opciones_duplicado(nombre_archivo, nuevo_nombre):
     """Muestra las opciones cuando se encuentra un archivo duplicado."""
-    print()
-    print(f"Error al intentar renombrar archivo \"{nombre_archivo}\":")
+    print(f"\nError al intentar renombrar archivo \"{nombre_archivo}\":")
     print(f"El archivo \"{nuevo_nombre}\" ya existe.")
-    print()
-    print("Opciones:")
-    print("a. Renombrar agregando letra al final")
-    print("b. No hacer nada (omitir renombrar)")
-    
+    print("Opciones:\n  a. Renombrar agregando letra al final\n  b. No hacer nada (omitir)")
     while True:
-        opcion = input("\n¿Qué desea hacer? (a/b): ").lower()
+        opcion = input("\n¿Qué desea hacer? (a/b): ").lower().strip()
         if opcion in ['a', 'b']:
             return opcion
-        print("\nOpción no válida. Por favor, seleccione 'a' o 'b'.")
+        print("Opción no válida. Por favor, seleccione 'a' o 'b'.")
 
 def preguntar_continuar():
     """Pregunta al usuario si desea continuar renombrando archivos."""
     while True:
-        continuar = input("\n¿Desea continuar renombrando archivos? (s/n): ").lower()
+        continuar = input("\n¿Desea continuar renombrando archivos? (s/n): ").lower().strip()
         if continuar in ['s', 'n']:
             return continuar == 's'
-        print("Por favor, responda con 's' para sí o 'n' para no.") 
+        print("Por favor, responda con 's' para sí o 'n' para no.")

@@ -1,23 +1,21 @@
+"""
+Módulo principal y orquestador CLI de la aplicación de renombrado de fotos y videos.
+Cumple con la Regla de Hierro (menos de 200 líneas de código).
+"""
+
 import os
 import sys
 
-# Añadir el directorio 'src' al sys.path para que los módulos se encuentren
-# tanto en desarrollo como en el ejecutable de PyInstaller.
-if getattr(sys, 'frozen', False):
-    # Estamos en un ejecutable de PyInstaller
-    application_path = os.path.dirname(sys.executable)
-    sys.path.insert(0, os.path.abspath(os.path.join(application_path, '..')))
-else:
-    # Estamos en un entorno de desarrollo
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 from renombrar.core.file_utils import (
-    obtener_nombre_destino,
-    obtener_nombre_destino_letra,
-    renombrar_archivo,
-    encontrar_archivos_por_directorio
+    encontrar_archivos_por_directorio,
+    encontrar_archivos_por_metadatos
 )
-from renombrar.core.date_utils import tiene_formato_telefono
+from renombrar.core.date_utils import obtener_fecha_hora
+from renombrar.core.procesador_archivos import (
+    clasificar_archivos_por_patron,
+    clasificar_archivos_por_metadatos,
+    ejecutar_renombrado_lote
+)
 from renombrar.ui.menu import (
     seleccionar_directorios,
     mostrar_resumen_archivos,
@@ -28,13 +26,107 @@ from renombrar.ui.menu import (
     mostrar_bienvenida,
     mostrar_copyright_salida
 )
+from renombrar.ui.menu_criterio import (
+    seleccionar_criterio_renombrado,
+    confirmar_renombrado_sin_hora,
+    preguntar_usar_fallback,
+    CRITERIO_PATRONES,
+    CRITERIO_METADATOS,
+    CRITERIO_SALIR
+)
+
+EXTENSIONES_PERMITIDAS = (
+    ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".tiff", ".tif",
+    ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".webm", ".m4v", ".3gp"
+)
+
+def _resolver_escaneo(criterio, dir_base):
+    """Ejecuta el escaneo según el criterio seleccionado y gestiona fallback."""
+    if criterio == CRITERIO_PATRONES:
+        return encontrar_archivos_por_directorio(dir_base), criterio
+
+    # Criterio metadatos
+    con_meta, sin_meta = encontrar_archivos_por_metadatos(dir_base, EXTENSIONES_PERMITIDAS)
+    total_sin_meta = sum(len(archivos) for archivos in sin_meta.values())
+
+    if total_sin_meta > 0 and preguntar_usar_fallback(total_sin_meta):
+        # Fallback a búsqueda de patrones en el nombre
+        for dir_rel, nombres in sin_meta.items():
+            for nombre in nombres:
+                fecha, hora = obtener_fecha_hora(nombre)
+                if fecha:
+                    con_meta.setdefault(dir_rel, []).append((nombre, fecha, hora))
+
+    return con_meta, criterio
+
+def _mostrar_pantalla_sin_archivos(dir_base):
+    """Muestra aviso amigable si no se encontraron archivos candidatos."""
+    print("=" * 70)
+    print("NO SE ENCONTRARON ARCHIVOS PARA RENOMBRAR".center(70))
+    print("=" * 70)
+    print(f"\nNo se encontraron archivos procesables en: {dir_base}\n")
+
+def _procesar_ciclo(dir_base):
+    """Ejecuta un ciclo de escaneo, selección y renombrado. Retorna False si se debe salir."""
+    criterio = seleccionar_criterio_renombrado()
+    if criterio == CRITERIO_SALIR:
+        return False
+
+    print(f"\nBuscando archivos en '{dir_base}' y subdirectorios...\n")
+    archivos_por_dir, criterio_activo = _resolver_escaneo(criterio, dir_base)
+
+    if not archivos_por_dir:
+        _mostrar_pantalla_sin_archivos(dir_base)
+        return preguntar_continuar()
+
+    directorios_sel = seleccionar_directorios(archivos_por_dir)
+    if not directorios_sel:
+        print("\nNo se seleccionaron directorios.")
+        return False
+
+    if criterio_activo == CRITERIO_METADATOS:
+        clasificados = clasificar_archivos_por_metadatos(
+            archivos_por_dir, directorios_sel, EXTENSIONES_PERMITIDAS,
+            callback_sin_hora=confirmar_renombrado_sin_hora
+        )
+    else:
+        clasificados = clasificar_archivos_por_patron(
+            archivos_por_dir, directorios_sel, EXTENSIONES_PERMITIDAS
+        )
+
+    if not mostrar_resumen_archivos(clasificados):
+        return preguntar_continuar()
+
+    categorias_sel = mostrar_menu(clasificados)
+    if not categorias_sel:
+        print("\nOperación cancelada.")
+        return False
+
+    archivos_a_procesar = []
+    for cat in categorias_sel:
+        archivos_a_procesar.extend(clasificados.get(cat, []))
+
+    if not archivos_a_procesar:
+        print("\nNo hay archivos en las categorías seleccionadas.")
+        return preguntar_continuar()
+
+    print(f"\nProcediendo con el renombrado de {len(archivos_a_procesar)} archivos...")
+    renombrados, cambios = ejecutar_renombrado_lote(
+        archivos_a_procesar, dir_base, callback_duplicado=mostrar_opciones_duplicado
+    )
+
+    print("\nProceso de cambio de nombre finalizado.")
+    print(f"\nSe realizaron {renombrados} cambios:")
+    for cambio in cambios:
+        print(f"  {cambio[0]} --> {cambio[1]}")
+    print("=" * 60)
+
+    return preguntar_continuar()
 
 def main():
-    """Función principal del programa."""
-    directorio_base = os.getcwd()
-    extensiones_permitidas = (".jpg", ".jpeg", ".png", ".mkv", ".mp4", ".heic")
-    
-    # Mostrar pantalla de bienvenida solo la primera vez
+    """Punto de entrada principal de la aplicación."""
+    dir_base = os.getcwd()
+
     if not mostrar_bienvenida():
         print("\nPrograma cancelado por el usuario.")
         mostrar_copyright_salida()
@@ -43,163 +135,9 @@ def main():
 
     while True:
         mostrar_titulo()
-        print(f"Buscando archivos en '{directorio_base}' y subdirectorios...\n")
-
-        archivos_por_directorio = encontrar_archivos_por_directorio(directorio_base)
-        
-        if not archivos_por_directorio:
-            print("=" * 70)
-            print("NO SE ENCONTRARON ARCHIVOS PARA RENOMBRAR")
-            print("=" * 70)
-            print()
-            print("El programa no encontró archivos con patrones de nombre reconocibles")
-            print("en el directorio actual.")
-            print()
-            print("RECORDATORIO:")
-            print("  • Este programa debe ejecutarse en la carpeta que contiene")
-            print("    las fotos o videos a renombrar.")
-            print("  • El programa busca archivos con patrones como:")
-            print("    - IMG_YYYYMMDD_HHMMSS.jpg")
-            print("    - VID_YYYYMMDD_HHMMSS.mp4")
-            print("    - YYYYMMDD_HHMMSS.* (formato teléfono)")
-            print()
-            print(f"Directorio actual: {directorio_base}")
-            print()
-            
-            while True:
-                respuesta = input("¿Desea salir del programa? (s/n): ").lower().strip()
-                if respuesta in ['s', 'n']:
-                    if respuesta == 's':
-                        mostrar_copyright_salida()
-                        input("\nPresione cualquier tecla para salir...")
-                        return
-                    else:
-                        break
-                print("Por favor, responda con 's' para sí o 'n' para no.")
-            
-            # Si el usuario dice 'n', continuar el ciclo para volver a buscar
-            continue
-
-        directorios_seleccionados = seleccionar_directorios(archivos_por_directorio)
-        if not directorios_seleccionados:
-            print("\nNo se seleccionaron directorios. Saliendo.")
+        continuar = _procesar_ciclo(dir_base)
+        if not continuar:
             mostrar_copyright_salida()
             input("\nPresione cualquier tecla para salir...")
-            return
-
-        # Clasificar archivos de los directorios seleccionados
-        archivos_clasificados = {
-            'archivos_img': [], 'archivos_vid': [], 'otros_archivos': [],
-            'archivos_telefono': [], 'archivos_sugeridos': []
-        }
-        
-        # Clasificar archivos, generando nombres de destino sobre la marcha
-        secuencia = 0
-        for dir_rel in directorios_seleccionados:
-            for nombre_archivo in archivos_por_directorio[dir_rel]:
-                nuevo_nombre = obtener_nombre_destino(nombre_archivo, secuencia)
-                if nombre_archivo == nuevo_nombre:
-                    continue  # Ignorar archivos que no coinciden con ningún patrón
-
-                # Si el nombre cambia, es un candidato. La secuencia solo aumenta para ellos.
-                secuencia += 1
-                
-                archivo_info = (dir_rel, nombre_archivo, nuevo_nombre)
-                nombre_upper = nombre_archivo.upper()
-                extension_coincide = nombre_archivo.lower().endswith(extensiones_permitidas)
-
-                if not extension_coincide:
-                    archivos_clasificados['archivos_sugeridos'].append(archivo_info)
-                    continue
-
-                if tiene_formato_telefono(nombre_archivo):
-                    archivos_clasificados['archivos_telefono'].append(archivo_info)
-                elif nombre_upper.startswith("IMG"):
-                    archivos_clasificados['archivos_img'].append(archivo_info)
-                elif nombre_upper.startswith("VID"):
-                    archivos_clasificados['archivos_vid'].append(archivo_info)
-                else:
-                    archivos_clasificados['otros_archivos'].append(archivo_info)
-
-        if not mostrar_resumen_archivos(archivos_clasificados):
-            mostrar_copyright_salida()
-            input("\nPresione cualquier tecla para salir...")
-            return
-
-        categorias_a_procesar = mostrar_menu(archivos_clasificados)
-        if not categorias_a_procesar:
-            print("\nOperación cancelada.")
-            mostrar_copyright_salida()
-            input("\nPresione cualquier tecla para salir...")
-            return
-        
-        archivos_a_procesar = []
-        for categoria in categorias_a_procesar:
-            archivos_a_procesar.extend(archivos_clasificados.get(categoria, []))
-
-        if not archivos_a_procesar:
-            print("\nNo hay archivos en las categorías seleccionadas.")
-            if not preguntar_continuar():
-                return
-            else:
-                continue
-
-        # Proceder con el renombrado
-        print(f"\nProcediendo con el renombrado de {len(archivos_a_procesar)} archivos...")
-        archivos_renombrados = 0
-        cambios_realizados = []
-
-        secuencia = 0
-        for dir_rel, nombre_archivo, nuevo_nombre_original in archivos_a_procesar:
-            # El nuevo nombre ya fue calculado, pero lo recalculamos por si la secuencia cambió
-            nuevo_nombre = obtener_nombre_destino(nombre_archivo, secuencia)
-            if nombre_archivo == nuevo_nombre:
-                continue
-            
-            # Incrementar la secuencia para el siguiente archivo válido
-            secuencia += 1
-            
-            # Reconstruir la ruta absoluta para las operaciones de renombrado
-            directorio_absoluto = os.path.abspath(os.path.join(directorio_base, dir_rel))
-            ruta_completa_original = os.path.join(directorio_absoluto, nombre_archivo)
-            ruta_completa_destino = os.path.join(directorio_absoluto, nuevo_nombre)
-
-            if os.path.exists(ruta_completa_destino):
-                opcion = mostrar_opciones_duplicado(nombre_archivo, nuevo_nombre)
-                
-                if opcion == 'a':
-                    secuencia_letra = 'a'
-                    while os.path.exists(ruta_completa_destino):
-                        nuevo_nombre = obtener_nombre_destino_letra(nombre_archivo, secuencia_letra)
-                        if nuevo_nombre is not None:
-                            ruta_completa_destino = os.path.join(directorio_absoluto, nuevo_nombre)
-                            if not os.path.exists(ruta_completa_destino):
-                                if renombrar_archivo(ruta_completa_original, ruta_completa_destino):
-                                    archivos_renombrados += 1
-                                    cambios_realizados.append((nombre_archivo, nuevo_nombre))
-                                break
-                        secuencia_letra = chr(ord(secuencia_letra) + 1)
-            else:
-                if renombrar_archivo(ruta_completa_original, ruta_completa_destino):
-                    archivos_renombrados += 1
-                    cambios_realizados.append((nombre_archivo, nuevo_nombre))
-
-        print("\nProceso de cambio de nombre finalizado.")
-        print(f"\nSe realizaron {archivos_renombrados} cambios:")
-        for cambio in cambios_realizados:
-            print(f"{cambio[0]} --> {cambio[1]}")
-        
-        print("==========================================")
-        
-        if not preguntar_continuar():
-            print("\nPresione cualquier tecla para salir...")
-            input()
-            return
-            
-        print("\n" + "="*50 + "\n")  # Separador visual entre iteraciones
-
-# El bloque if __name__ == '__main__' se moverá a un script de entrada (run.py)
-# para evitar problemas con la ejecución de paquetes y PyInstaller.
-# Si se necesita ejecutar este archivo directamente para pruebas, se puede descomentar.
-# if __name__ == "__main__":
-#     main() 
+            break
+        print("\n" + "=" * 50 + "\n")
