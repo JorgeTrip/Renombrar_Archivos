@@ -8,7 +8,9 @@ from renombrar.ui.menu import (
     mostrar_resumen_archivos,
     mostrar_menu,
     mostrar_opciones_duplicado,
-    preguntar_continuar
+    preguntar_continuar,
+    mostrar_aviso_ya_formateados,
+    mostrar_previsualizacion_y_confirmar
 )
 
 class TestMenu(unittest.TestCase):
@@ -61,6 +63,18 @@ class TestMenu(unittest.TestCase):
         """Prueba la confirmación de continuar el ciclo."""
         self.assertTrue(preguntar_continuar())
         self.assertFalse(preguntar_continuar())
+
+    def test_mostrar_aviso_ya_formateados(self):
+        """Prueba que la función no lance excepción al ejecutarse con diferentes valores."""
+        mostrar_aviso_ya_formateados(0)
+        mostrar_aviso_ya_formateados(5)
+
+    @patch('builtins.input', side_effect=['s', 'n'])
+    def test_mostrar_previsualizacion_y_confirmar(self, mock_input):
+        """Prueba la previsualización y confirmación afirmativa y negativa."""
+        archivos = [(".", "foto.jpg", "2023-01-01 12-00-00 - foto.jpg")]
+        self.assertTrue(mostrar_previsualizacion_y_confirmar(archivos))
+        self.assertFalse(mostrar_previsualizacion_y_confirmar(archivos))
 
 if __name__ == '__main__':
     unittest.main()

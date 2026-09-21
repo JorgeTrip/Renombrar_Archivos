@@ -7,7 +7,10 @@ from renombrar.core.date_utils import (
     obtener_fecha_hora,
     obtener_fecha_hora_desde_nombre,
     archivo_tiene_formato_destino,
-    tiene_formato_telefono
+    tiene_formato_telefono,
+    tiene_formato_destino_completo,
+    tiene_formato_destino_solo_fecha,
+    limpiar_prefijo_fecha_existente
 )
 
 class TestDateUtils(unittest.TestCase):
@@ -73,6 +76,34 @@ class TestDateUtils(unittest.TestCase):
         ]
         for nombre in nombres_invalidos:
             self.assertFalse(tiene_formato_telefono(nombre))
+
+    def test_tiene_formato_destino_completo(self):
+        """Prueba detección de formato completo YYYY-MM-DD HH-MM-SS - ..."""
+        self.assertTrue(tiene_formato_destino_completo("2023-08-15 14-30-22 - foto.jpg"))
+        self.assertTrue(tiene_formato_destino_completo("2023-08-15 14-30-22 - fotoa.jpg"))
+        self.assertFalse(tiene_formato_destino_completo("2023-08-15 - foto.jpg"))
+        self.assertFalse(tiene_formato_destino_completo("IMG_20230815_143022.jpg"))
+
+    def test_tiene_formato_destino_solo_fecha(self):
+        """Prueba detección de formato solo fecha YYYY-MM-DD - ..."""
+        self.assertTrue(tiene_formato_destino_solo_fecha("2023-08-15 - foto.jpg"))
+        self.assertFalse(tiene_formato_destino_solo_fecha("2023-08-15 14-30-22 - foto.jpg"))
+        self.assertFalse(tiene_formato_destino_solo_fecha("foto.jpg"))
+
+    def test_limpiar_prefijo_fecha_existente(self):
+        """Prueba remover prefijo existente para no duplicar fechas."""
+        self.assertEqual(
+            limpiar_prefijo_fecha_existente("2023-08-15 - foto.jpg"),
+            "foto.jpg"
+        )
+        self.assertEqual(
+            limpiar_prefijo_fecha_existente("2023-08-15 14-30-22 - foto.jpg"),
+            "foto.jpg"
+        )
+        self.assertEqual(
+            limpiar_prefijo_fecha_existente("foto.jpg"),
+            "foto.jpg"
+        )
 
 if __name__ == "__main__":
     unittest.main()

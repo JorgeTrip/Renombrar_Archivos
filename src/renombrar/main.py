@@ -4,7 +4,6 @@ Cumple con la Regla de Hierro (menos de 200 líneas de código).
 """
 
 import os
-import sys
 
 from renombrar.core.file_utils import (
     encontrar_archivos_por_directorio,
@@ -24,7 +23,9 @@ from renombrar.ui.menu import (
     preguntar_continuar,
     mostrar_titulo,
     mostrar_bienvenida,
-    mostrar_copyright_salida
+    mostrar_copyright_salida,
+    mostrar_aviso_ya_formateados,
+    mostrar_previsualizacion_y_confirmar
 )
 from renombrar.ui.menu_criterio import (
     seleccionar_criterio_renombrado,
@@ -41,39 +42,40 @@ EXTENSIONES_PERMITIDAS = (
 )
 
 def _resolver_escaneo(criterio, dir_base):
-    """Ejecuta el escaneo según el criterio seleccionado y gestiona fallback."""
+    """Ejecuta el escaneo según el criterio y retorna (archivos, criterio, omitidos)."""
     if criterio == CRITERIO_PATRONES:
-        return encontrar_archivos_por_directorio(dir_base), criterio
+        archivos, omitidos = encontrar_archivos_por_directorio(dir_base)
+        return archivos, criterio, omitidos
 
-    # Criterio metadatos
-    con_meta, sin_meta = encontrar_archivos_por_metadatos(dir_base, EXTENSIONES_PERMITIDAS)
+    con_meta, sin_meta, omitidos = encontrar_archivos_por_metadatos(dir_base, EXTENSIONES_PERMITIDAS)
     total_sin_meta = sum(len(archivos) for archivos in sin_meta.values())
 
     if total_sin_meta > 0 and preguntar_usar_fallback(total_sin_meta):
-        # Fallback a búsqueda de patrones en el nombre
         for dir_rel, nombres in sin_meta.items():
             for nombre in nombres:
                 fecha, hora = obtener_fecha_hora(nombre)
                 if fecha:
                     con_meta.setdefault(dir_rel, []).append((nombre, fecha, hora))
 
-    return con_meta, criterio
+    return con_meta, criterio, omitidos
 
 def _mostrar_pantalla_sin_archivos(dir_base):
-    """Muestra aviso amigable si no se encontraron archivos candidatos."""
+    """Muestra aviso si no se encontraron archivos candidatos."""
     print("=" * 70)
-    print("NO SE ENCONTRARON ARCHIVOS PARA RENOMBRAR".center(70))
+    print("NO SE ENCONTRARON ARCHIVOS NUEVOS PARA RENOMBRAR".center(70))
     print("=" * 70)
     print(f"\nNo se encontraron archivos procesables en: {dir_base}\n")
 
 def _procesar_ciclo(dir_base):
-    """Ejecuta un ciclo de escaneo, selección y renombrado. Retorna False si se debe salir."""
+    """Ejecuta un ciclo completo de escaneo, previsualización y renombrado."""
     criterio = seleccionar_criterio_renombrado()
     if criterio == CRITERIO_SALIR:
         return False
 
     print(f"\nBuscando archivos en '{dir_base}' y subdirectorios...\n")
-    archivos_por_dir, criterio_activo = _resolver_escaneo(criterio, dir_base)
+    archivos_por_dir, criterio_activo, omitidos = _resolver_escaneo(criterio, dir_base)
+
+    mostrar_aviso_ya_formateados(omitidos)
 
     if not archivos_por_dir:
         _mostrar_pantalla_sin_archivos(dir_base)
@@ -108,6 +110,11 @@ def _procesar_ciclo(dir_base):
 
     if not archivos_a_procesar:
         print("\nNo hay archivos en las categorías seleccionadas.")
+        return preguntar_continuar()
+
+    # Previsualización y confirmación obligatoria previa al renombrado
+    if not mostrar_previsualizacion_y_confirmar(archivos_a_procesar):
+        print("\nOperación cancelada por el usuario. No se modificó ningún archivo.")
         return preguntar_continuar()
 
     print(f"\nProcediendo con el renombrado de {len(archivos_a_procesar)} archivos...")
