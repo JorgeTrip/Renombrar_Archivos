@@ -1,0 +1,93 @@
+name: Publicar Release y Ejecutable Windows
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'changelog.json'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  construir-y-publicar:
+    runs-on: windows-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Descargar código del repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar entorno Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Ejecutar pruebas unitarias automatizadas
+        run: |
+          python -m unittest discover -s tests -p "test*.py"
+
+      - name: Calcular versión y actualizar historial
+        id: versionado
+        run: |
+          python scripts/ci/orquestar_release.py
+
+      - name: Compilar ejecutable de Windows con PyInstaller
+        run: |
+          python -m PyInstaller renombrarfotos.spec --clean --workpath build --distpath dist
+
+      - name: Verificar archivo ejecutable generado
+        shell: pwsh
+        run: |
+          $exePath = "dist/RenombrarFotos.exe"
+          if (Test-Path $exePath) {
+              $size = (Get-Item $exePath).Length / 1MB
+              Write-Host "Ejecutable generado con éxito: $exePath ($([math]::Round($size, 2)) MB)"
+          } else {
+              Write-Error "No se encontró el ejecutable en $exePath"
+              exit 1
+          }
+
+      - name: Sincronizar cambios de versión y changelog en Git
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add setup.py README.md src/renombrar/ui/menu.py CHANGELOG.md changelog.json
+          $cambios = git status --porcelain
+          if ($cambios) {
+              git commit -m "chore: Se actualiza versión a ${{ steps.versionado.outputs.version }} e historial [skip ci]"
+              git push origin main
+          }
+
+      - name: Crear etiqueta Git para el Release
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.versionado.outputs.tag }}"
+          git tag $tag
+          git push origin $tag
+
+      - name: Publicar Release oficial en GitHub con ejecutable
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.versionado.outputs.tag }}"
+          $version = "${{ steps.versionado.outputs.version }}"
+          gh release create $tag dist/RenombrarFotos.exe `
+            --title "Versión $version" `
+            --notes-file release_notes.md

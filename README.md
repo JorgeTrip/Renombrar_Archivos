@@ -1,6 +1,18 @@
-# Renombrar Archivos de Fotos y Videos - v1.9
+# Renombrar Archivos de Fotos y Videos - v1.9.0
+
+[![Descargar para Windows](https://img.shields.io/badge/Descargar-Windows_.exe-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/JorgeTrip/Renombrar_Archivos/releases/latest/download/RenombrarFotos.exe)
+[![Última Versión](https://img.shields.io/github/v/release/JorgeTrip/Renombrar_Archivos?style=for-the-badge&color=success)](https://github.com/JorgeTrip/Renombrar_Archivos/releases/latest)
+[![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-yellow?style=for-the-badge)](LICENSE)
 
 Una herramienta profesional en Python para renombrar automáticamente archivos de fotos y videos, agregando la fecha y hora al inicio del nombre para optimizar la organización cronológica. Soporta tanto análisis por patrones de nombres como extracción de metadatos incrustados (EXIF / Video).
+
+## 📥 Descarga Rápida (Ejecutable para Windows)
+
+No necesitas tener Python instalado. Puedes descargar directamente el archivo ejecutable listo para usar:
+
+👉 **[Descargar RenombrarFotos.exe (Última versión)](https://github.com/JorgeTrip/Renombrar_Archivos/releases/latest/download/RenombrarFotos.exe)**
+
+> Para ver las notas de cada versión y versiones anteriores, visita la sección de [Releases de GitHub](https://github.com/JorgeTrip/Renombrar_Archivos/releases).
 
 ## Características Principales
 

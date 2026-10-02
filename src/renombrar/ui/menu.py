@@ -19,7 +19,7 @@ def mostrar_copyright_salida():
 
 def mostrar_titulo():
     """Muestra el título centrado del programa."""
-    titulo = "Renombrar archivos de fotos y videos - v1.9"
+    titulo = "Renombrar archivos de fotos y videos - v1.9.0"
     subtitulo = "---> by JOT <---"
     copyright_text = "(C) Jorge Osvaldo Tripodi (JOT) 2025"
     try:

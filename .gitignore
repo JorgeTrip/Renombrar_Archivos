@@ -3,7 +3,7 @@
 # Archivos de build
 build/
 dist/
-*.spec
+release_notes.md
 
 # Python
 __pycache__/
